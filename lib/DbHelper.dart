@@ -10,9 +10,9 @@ class DbHelper{
   static final _tablename='myFoodTable';
   static final columnid='_id';
   static final foodName='name';
-  static final foodImage='';
-  static final foodValue='';
-  static final foodPerValue='';
+  static final foodImage='image';
+  static final foodValue='value';
+  static final foodPerValue='pervalue';
 
   DbHelper._privateConstructor();
   static final DbHelper instance= DbHelper._privateConstructor();
@@ -36,7 +36,8 @@ class DbHelper{
       CREATE TABLE $_tablename ($columnid INTEGER PRIMARY KEY,
       $foodName TEXT NOT NULL,
       $foodImage TEXT NOT NULL,
-      $foodValue TEXT NOT NULL)
+      $foodValue TEXT NOT NULL,
+      $foodPerValue TEXT NOT NULL)
       '''
     );
   }
@@ -49,13 +50,41 @@ class DbHelper{
     Database? db=await instance.database;
     return await db?.query(_tablename);
   }
-  Future<int?>update(Map<String,dynamic>row)async{
+  Future<int?>update(int clmid,Map<String,dynamic>row)async{
     Database? db=await instance.database;
-    int id=row[columnid];
+    int id = clmid;
     return await db?.update(_tablename,row,where: '$columnid=?',whereArgs: [id]);
   }
   Future<int?>delete(int id)async{
     Database? db=await instance.database;
     return await db?.delete(_tablename,where: '$columnid=?',whereArgs: [id]);
+  }
+
+  Future<bool?> isAvailablequaryall(String value) async {
+    Database? db=await instance.database;
+    final List<Map<String, Object?>>? result = await db?.query(
+      _tablename,
+      where: '$foodName = ?',
+      whereArgs: [value],
+      limit: 1,
+    );
+    if(result!.isEmpty){
+      return false;
+    }else{
+      return result.isNotEmpty;
+    }
+}
+
+  Future<List<Map<String, dynamic>>?> getValueAndFoodPerValue() async {
+    final db = await instance.database;
+
+    // Query to select both `value` and `foodPerValue` columns
+    final result = await db?.query(
+      _tablename,
+      columns: ['value', 'pervalue'],
+    );
+
+    // Return the result as a list of maps
+    return result;
   }
 }

@@ -39,15 +39,18 @@ class _home_pageState extends State<home_page> {
     '9.45',
     '10.00'
   ];
-
+  List<Map<String, dynamic>>? allData =[];
+  bool isRowAvailable = true;
+  double totalPaymentsAmount = 0;
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding:  EdgeInsets.fromLTRB(25, 20, 25, 10),
+              padding:  const EdgeInsets.fromLTRB(25, 20, 25, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
@@ -254,8 +257,7 @@ class _home_pageState extends State<home_page> {
     );
   }
 
-  void _showBottomcartPopup(BuildContext context,double total_amount) {
-  //  double totalprice = double.parse(food_itemsPrice[index]);
+  void _showBottomcartPopupbutton(BuildContext context,double total_amount) {
     showModalBottomSheet(
         context: context,
         isScrollControlled: true, // Allows the popup to resize according to its content
@@ -263,23 +265,30 @@ class _home_pageState extends State<home_page> {
         builder: (context) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(20,0,20,20),
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.08,
-              width: double.maxFinite,
-              decoration: BoxDecoration(
-                  color: Colors.black,
-                borderRadius: BorderRadius.circular(15)
-              ),
-              child: Row(
-                children: [
-                  SizedBox(width: 15,),
-                  Text('Cart',style: TextStyle(color: Colors.white),),
-                  Spacer(),
-                  Text('24min · \$${total_amount}',style: TextStyle(color: Colors.white),),
-                  SizedBox(width: 15,),
-                ],
-              ),
+            child: GestureDetector(
+              onTap: (){
+               // totalPaymentsList = total_amount;
+                fetchData();
+                _showBottomPopupForCart(context);
+              },
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.08,
+                width: double.maxFinite,
+                decoration: BoxDecoration(
+                    color: Colors.black,
+                  borderRadius: BorderRadius.circular(15)
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(width: 15,),
+                    Text('Cart',style: TextStyle(color: Colors.white),),
+                    Spacer(),
+                    Text('24min · \$${totalPaymentsAmount.toStringAsFixed(2)}',style: TextStyle(color: Colors.white),),
+                    SizedBox(width: 15,),
+                  ],
+                ),
 
+              ),
             ),
           );
         }
@@ -290,7 +299,6 @@ class _home_pageState extends State<home_page> {
 void _showBottomPopup(BuildContext context,int index) {
     int value = 1;
     double totalprice = double.parse(food_itemsPrice[index]);
-    DbHelper dbHelper = DbHelper.instance;
   showModalBottomSheet(
       context: context,
       isScrollControlled: true, // Allows the popup to resize according to its content
@@ -396,7 +404,6 @@ void _showBottomPopup(BuildContext context,int index) {
                                    GestureDetector(
                                        onTap: (){
                                          if(value == 1){
-                                          // return;
                                            setState(() {
                                              totalprice = double.parse(food_itemsPrice[index]);
                                            });
@@ -407,10 +414,10 @@ void _showBottomPopup(BuildContext context,int index) {
                                            });
                                          }
                                        },
-                                       child: Icon(Icons.minimize_rounded)),
-                                  SizedBox(width: 12,),
-                                  Text('${value.toString()}'),
-                                  SizedBox(width: 12,),
+                                       child: const Icon(Icons.minimize_rounded)),
+                                  const SizedBox(width: 12,),
+                                  Text(value.toString()),
+                                  const SizedBox(width: 12,),
                                   GestureDetector(
                                       onTap: (){
                                         setState(() {
@@ -418,28 +425,31 @@ void _showBottomPopup(BuildContext context,int index) {
                                           totalprice = totalprice+double.parse(food_itemsPrice[index]);
                                         });
                                       },
-                                      child: Icon(Icons.add)),
+                                      child: const Icon(Icons.add)),
                                 ],
                               ),
                             ),
                           ),
-                         SizedBox(width: 20,),
+                         const SizedBox(width: 20,),
                           Expanded(
                             flex: 3,
                             child: GestureDetector(
-                              onTap:(){
-
+                              onTap:()async{
+                                print(value);
                                 final event = {
-                                DbHelper.foodImage: 'assets/Banana.png',
-                                  DbHelper.foodName: 'Banana..',
-                                  DbHelper.foodValue: '2',
-                                  DbHelper.foodPerValue: '20'
+                                DbHelper.foodImage: imgList[index],
+                                  DbHelper.foodName: food_itemsNames[index],
+                                  DbHelper.foodValue: value.toString(),
+                                  DbHelper.foodPerValue: double.parse(food_itemsPrice[index]).toString()
                                };
+                                await checkdata(food_itemsNames[index]);
+                              if(isRowAvailable){
 
+                              }else{
                                 addToDatabase(event);
-
+                              }
                                 Navigator.pop(context);
-                        // _showBottomcartPopup(context,totalprice);
+                         _showBottomcartPopupbutton(context,totalprice);
                               },
                               child: Container(
                                 height: 50,
@@ -447,7 +457,7 @@ void _showBottomPopup(BuildContext context,int index) {
                                     color: Colors.black,
                                   borderRadius: BorderRadius.circular(15)
                                 ),
-                                child: Center(child: Text('Add to cart  \$${totalprice}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),)),
+                                child: Center(child: Text('Add to cart  \$$totalprice',style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold),)),
                               ),
                             ),
                           ),
@@ -463,86 +473,293 @@ void _showBottomPopup(BuildContext context,int index) {
       }
   );
 }
+
+  void _showBottomPopupForCart(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true, // Allows the popup to resize according to its content
+        builder: (context) {
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.9,
+            width: double.maxFinite,
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20,right: 20,top: 40),
+                        child: Text('We will deliver in\n24 minutes to the address:',softWrap: true,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,style: TextStyle(fontSize: 23,fontWeight: FontWeight.bold),),
+                      ),
+                      const SizedBox(height: 20,),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 20,right: 20),
+                        child: Row(
+                          children: [
+                            Text('100a Ealing rd',softWrap: true,
+                              style: TextStyle(fontSize: 15,color: Colors.black,fontWeight: FontWeight.bold),),
+                            SizedBox(width: 15,),
+                            Text('Change address',softWrap: true,
+                              maxLines: 4,style: TextStyle(fontSize: 14,color: Colors.grey),),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 15,right: 15,bottom: 20,top: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                scrollDirection: Axis.vertical,
+                                itemCount: allData?.length,
+                                itemBuilder: (context, index) {
+                                  int value =  int.parse(allData?[index]['value']);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 15),
+                                    child: Row(
+                                      // crossAxisAlignment: CrossAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                            flex: 1,
+                                            child: Image.asset(allData?[index]['image'],height: 80,width: 80,)),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              Text(allData?[index]['name'],softWrap: true,
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 2,
+                                                style: const TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500
+                                                ),),
+                                              const SizedBox(height: 10,),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                children: [
+                                                  GestureDetector(
+                                                      onTap: (){
+                                                        setState(() {
+                                                          value--;
+                                                        });
+                                                        if(value == 0){
+                                                          delete(allData?[index]['_id']);
+                                                        }else{
+                                                          final event = {
+                                                            DbHelper.foodImage: allData?[index]['image'],
+                                                            DbHelper.foodName: allData?[index]['name'],
+                                                            DbHelper.foodValue: value,
+                                                            DbHelper.foodPerValue: double.parse(allData?[index]['pervalue'])
+                                                          };
+                                                          updateItem(allData?[index]['_id'],event);
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                          decoration: BoxDecoration(
+                                                              color: Colors.grey.shade300,
+                                                              borderRadius: BorderRadius.circular(10)
+                                                          ),
+                                                          child: const Padding(
+                                                            padding: EdgeInsets.all(5.0),
+                                                            child: Icon(Icons.minimize_rounded),
+                                                          ))),
+                                                  const SizedBox(width: 6,),
+                                                  Text('$value'),
+                                                  const SizedBox(width: 6,),
+                                                  GestureDetector(
+                                                      onTap: (){
+                                                        setState(() {
+                                                          value++;
+                                                        });
+                                                        final event = {
+                                                          DbHelper.foodImage: allData?[index]['image'],
+                                                          DbHelper.foodName: allData?[index]['name'],
+                                                          DbHelper.foodValue: value,
+                                                          DbHelper.foodPerValue: double.parse(allData?[index]['pervalue'])
+                                                        };
+                                                        updateItem(allData?[index]['_id'],event);
+                                                      },
+                                                      child: Container(
+                                                          decoration: BoxDecoration(
+                                                              color: Colors.grey.shade300,
+                                                              borderRadius: BorderRadius.circular(10)
+                                                          ),
+                                                          child: const Padding(
+                                                            padding: EdgeInsets.all(5.0),
+                                                            child: Icon(Icons.add),
+                                                          ))),
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 1,
+                                          child: Padding(
+                                            padding: const EdgeInsets.fromLTRB(15,10,0,25),
+                                            child: Text('\$${double.parse(allData?[index]['pervalue'])*value}',style: const TextStyle(fontWeight: FontWeight.bold),),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },),
+                            ),
+                            Divider(),
+                            SizedBox(height: 20,),
+                             Row(
+                              children: [
+                                 const Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                     Text('Delivery',style: TextStyle(
+                                       fontWeight: FontWeight.w700,fontSize: 17
+                                     ),),
+                                     SizedBox(height: 5,),
+                                     Text('Free delivery from \$30',style: TextStyle(
+                                       color: Colors.grey
+                                     ),)
+                                   ],
+                                 ),
+                                Spacer(),
+                                Text('\$${totalPaymentsAmount.toStringAsFixed(2)}',style: const TextStyle(
+                                    fontWeight: FontWeight.bold,fontSize: 16
+                                ),),
+                                SizedBox(width: 15,)
+                              ],
+                            ),
+                            SizedBox(height: 15,),
+                            Divider(),
+                            SizedBox(height: 15,),
+                            const Text('Payment method',style: TextStyle(
+                                color: Colors.grey,
+                              fontSize: 16
+                            ),),
+                            SizedBox(height: 15,),
+                            Row(
+                              children: [
+                                Container(
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.black),
+                                    borderRadius: BorderRadius.circular(5)
+                                  ),
+                                  child: const Padding(
+                                    padding: EdgeInsets.fromLTRB(8,3,8,3),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.apple,size: 20,),
+                                        Text('Pay',style: TextStyle(
+                                          fontSize: 14
+                                        ),)
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8,),
+                                const Text('Apple pay',style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700
+                                ),),
+                                const Spacer(),
+                                const Icon(Icons.arrow_forward_ios,size: 15,)
+                              ],
+                            ),
+                            SizedBox(height: 90,)
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20,0,20,20),
+                    child: Container(
+                      height: MediaQuery.of(context).size.height * 0.08,
+                      width: double.maxFinite,
+                      decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(15)
+                      ),
+                      child:  Row(
+                        children: [
+                          const SizedBox(width: 20,),
+                          const Text('Pay',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                          const Spacer(),
+                          const Text('24min ·',style: TextStyle(color: Colors.white),),
+                         const SizedBox(width: 2,),
+                          Text('\$${totalPaymentsAmount.toStringAsFixed(2)}',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                          const SizedBox(width: 20,),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+    );
+  }
   addToDatabase(Map<String, dynamic> updatedRow)async{
     final result = await DbHelper.instance.insert(updatedRow);
     print('resultt--${result}');
-    Map<String, dynamic> newRow = {
-      'columnName1': 'value1',
-      'columnName2': 'value2',
-      // add other column-value pairs
-    };
+  }
 
+  void fetchData() async {
+    allData = await DbHelper.instance.quaryall();
+    setState(() {
+      print("dataaa--${allData}");
+    });
+    fetchValueAndFoodPerValue();
+  }
+  Future<int?> updateItem(int id,Map<String, dynamic> updatedRow) async {
+    int? db = await DbHelper.instance.update(id,updatedRow);
+    print('updated result--$db');
+    fetchData();
+  }
+void delete(int id) async {
+    int? db = await DbHelper.instance.delete(id);
+    print('deleted row--$db');
+    fetchData();
+  }
 
+   checkdata(String name) async {
+      isRowAvailable = (await DbHelper.instance.isAvailablequaryall(name))!;
+      // setState(() {
+      //
+      // });
+    print('row available--$isRowAvailable');
+  }
+
+  void fetchValueAndFoodPerValue() async {
+    List<Map<String, dynamic>>? valuesList = await DbHelper.instance.getValueAndFoodPerValue();
+    double total = 0.0;
+    for (var item in valuesList!) {
+      final value = double.parse(item['value']);
+      final pervalue = double.parse(item['pervalue']);
+      total += value * pervalue;
+    }
+    print('Total of all value * pervalue: $total');
+    setState(() {
+      totalPaymentsAmount = total;
+    });
   }
 
 }
 
-
-
-
-
-
-/*
-class BottomPopup extends StatelessWidget {
-  final String title;
-  final String content;
-
-  BottomPopup({required this.title, required this.content});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Arrow pointing upwards
-        CustomPaint(
-          painter: ArrowPainter(),
-          size: Size(30, 10), // Size of the arrow
-        ),
-        // Popup content
-        Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-            boxShadow: [BoxShadow(blurRadius: 5, color: Colors.black26)],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              SizedBox(height: 10),
-              Text(content),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class ArrowPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white;
-
-    // Define the path for the arrow
-    Path path = Path();
-    path.moveTo(size.width / 2, 0); // Start at the top center
-    path.lineTo(0, size.height); // Left bottom
-    path.lineTo(size.width, size.height); // Right bottom
-    path.close(); // Close the path to create the triangle
-
-    // Draw the arrow
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
-  }
-}
-*/
