@@ -1,16 +1,41 @@
-# food_delivery_app1
+Food Delivery App
+This is a Flutter-based food delivery app built as a UI implementation of a design inspired by Dribbble. The app allows users to view food items, check details in a bottom sheet, and manage a cart with local sql database.
 
-A new Flutter project.
+Features:
+Home Screen
+Horizontal list of featured food items
+Vertical list of available food items
+Food Item Details
+Bottom sheet view for detailed food item information
+Cart Screen
+Add and remove items from the cart
+View all items added to the cart
+Screens and Functionalities
+Home Screen:
+Displays a horizontal list of food items.
+Shows a vertical list of all food items with options to add items to the cart.
+Food Item Details Bottom Sheet:
+Allows users to view detailed information about each food item upon selection.
+Cart Screen:
+View all items added to the cart.
+Remove items from the cart.
+Getting Started:
+Prerequisites
+Ensure you have the following installed:
+Flutter SDK
+A code editor like Android Studio
+Installation
+Install dependencies:
+flutter pub get
+Running the App
+Connect your device or start an emulator.
+Run the app with:
+flutter run
+Project Structure:
+lib/
+├── main.dart            # Entry point of the app
+├── screens/             # Screens: Home, Cart
+└── widgets/             # Reusable widgets like food item cards, bottom sheet
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Notes:
+No external APIs are used; the app uses local sql database for funtionality.
